@@ -1,0 +1,58 @@
+services:
+  master_db:
+    build: db/
+    volumes:
+      - pg_logs:/var/log/postgresql
+    environment:
+      - DB_DATABASE=$DB_DATABASE
+      - DB_PASSWORD=$DB_PASSWORD
+      - DB_USER=$DB_USER
+      - DB_REPL_USER=$DB_REPL_USER
+      - DB_REPL_PASSWORD=$DB_REPL_PASSWORD
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.23
+  slave_db:
+    build: db_repl/
+    environment:
+      - DB_HOST=$DB_HOST
+      - DB_PORT=$DB_PORT
+      - DB_REPL_USER=$DB_REPL_USER
+      - DB_REPL_PASSWORD=$DB_REPL_PASSWORD
+    depends_on:
+      - master_db
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.24
+  tg_bot:
+    build: bot/
+    environment:
+      - TOKEN=$TOKEN
+      - RM_HOST=$RM_HOST
+      - RM_PORT=$RM_PORT
+      - RM_USER=$RM_USER
+      - RM_PASSWORD=$RM_PASSWORD
+      - DB_USER=$DB_USER
+      - DB_PASSWORD=$DB_PASSWORD
+      - DB_HOST=$DB_HOST
+      - DB_PORT=$DB_PORT
+      - DB_DATABASE=$DB_DATABASE
+    depends_on:
+      - master_db
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - pg_logs:/plogs
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.22
+
+volumes:
+  pg_logs:
+
+networks:
+  custom_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
