@@ -41,8 +41,9 @@
         name: git
         state: present
     - name: APT INSTALL PYTHON3-PIP
-      package: python3-pip
-      state: present
+      package:
+        name: python3-pip
+        state: present
 
 - name: MASTER_DB_CONF
   hosts: host01
