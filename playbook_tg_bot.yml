@@ -40,6 +40,9 @@
       package:
         name: git
         state: present
+    - name: APT INSTALL PYTHON3-PIP
+      package: python3-pip
+      state: present
 
 - name: MASTER_DB_CONF
   hosts: host01
@@ -67,26 +70,30 @@
         name: postgresql
         state: restarted
     - name: CHANGE POSTGRES PASSWORD
-      command: cd /tmp && su postgres -c "psql -c \"ALTER USER {{ hostvars[inventory_hostname]['DB_USER'] }} WITH PASSWORD '{{ hostvars[inventory_hostname]['DB_PASSWORD'] }}';\""
+      command: su postgres -c "psql -c \"ALTER USER {{ hostvars[inventory_hostname]['DB_USER'] }} WITH PASSWORD '{{ hostvars[inventory_hostname]['DB_PASSWORD'] }}';\""
     - name: CREATE REPLICATION USER
-      command: cd /tmp && su postgres -c "psql -c \"CREATE ROLE {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} WITH REPLICATION LOGIN PASSWORD '{{ hostvars[inventory_hostname]['DB_REPL_PASSWORD'] }}';\""
+      command: su postgres -c "psql -c \"CREATE ROLE {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} WITH REPLICATION LOGIN PASSWORD '{{ hostvars[inventory_hostname]['DB_REPL_PASSWORD'] }}';\""
     - name: CREATE DATABASE
-      command: cd /tmp && su postgres -c "psql -c \"CREATE DATABASE {{ hostvars[inventory_hostname]['DB_DATABASE'] }};\""
+      command: su postgres -c "psql -c \"CREATE DATABASE {{ hostvars[inventory_hostname]['DB_DATABASE'] }};\""
     - name: CREATE SECOND TABLE
-      command: cd /tmp && su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS second(ID SERIAL PRIMARY KEY NOT NULL, phone varchar(50) NOT NULL);\""
+      command: su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS second(ID SERIAL PRIMARY KEY NOT NULL, phone varchar(50) NOT NULL);\""
     - name: CREATE FIRST TABLE
-      command: cd /tmp && su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS first(ID SERIAL PRIMARY KEY NOT NULL, email varchar(50) NOT NULL);\""
+      command: su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS first(ID SERIAL PRIMARY KEY NOT NULL, email varchar(50) NOT NULL);\""
 
 - name: REPLICATION_DB
   hosts: host02
   gather_facts: false
   tasks:
+    - name: STOP POSTGRESQL
+      command: systemctl stop postgresql
     - name: REMOVE
       command: rm -rf /var/lib/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/
     - name: DO REPLICATION
       command: pg_basebackup -h {{ hostvars[inventory_hostname]['DB_HOST'] }} -D /var/lib/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/main/ -U {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} -vP -w
       environment:
         PGPASSWORD: "{{ hostvars[inventory_hostname]['DB_REPL_PASSWORD'] }}"
+    - name: START POSTGRESQL
+      command: systemctl start postgresql
 
 - name: TG_BOT
   hosts: host03
