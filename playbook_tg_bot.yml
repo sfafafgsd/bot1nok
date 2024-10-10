@@ -90,7 +90,7 @@
     - name: REMOVE
       command: rm -rf /var/lib/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/
     - name: DO REPLICATION
-      command: pg_basebackup -h {{ hostvars[inventory_hostname]['DB_HOST'] }} -D /var/lib/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/main/ -U {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} -vP -w
+      command: su postgres -c "pg_basebackup -h {{ hostvars[inventory_hostname]['DB_HOST'] }} -D /var/lib/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/main/ -U {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} -vP -w"
       environment:
         PGPASSWORD: "{{ hostvars[inventory_hostname]['DB_REPL_PASSWORD'] }}"
     - name: START POSTGRESQL
