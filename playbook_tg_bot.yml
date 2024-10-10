@@ -60,7 +60,7 @@
       blockinfile:
         path: "/etc/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/main/pg_hba.conf"
         block: |
-          host replication {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} {{ hostvars[inventory_hostname]['ansible_host'] }}/32 scram-sha-256
+          host replication {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} {{ hostvars[inventory_hostname]['DB_REPL_HOST'] }}/32 scram-sha-256
           host all all {{ hostvars[inventory_hostname]['ansible_host'] }}/32 scram-sha-256
     - name: RESTART PG
       service:
