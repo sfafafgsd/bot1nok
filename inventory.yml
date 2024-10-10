@@ -21,8 +21,8 @@ all:
       ansible_host: 192.168.122.90
       ansible_user: root
       ansible_password: Qq123456
-      remote_repo: https://github.com/sfafafgsd/bot1nok
-      TOKEN: --
+      remote_repo: https://github.com/sfafafgsd/bot1nok.git
+      TOKEN: 
       RM_HOST: 192.168.122.249
       RM_PORT: 22
       RM_USER: root
