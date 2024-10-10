@@ -67,15 +67,15 @@
         name: postgresql
         state: restarted
     - name: CHANGE POSTGRES PASSWORD
-      command: su postgres -c "psql -c \"ALTER USER {{ hostvars[inventory_hostname]['DB_USER'] }} WITH PASSWORD '{{ hostvars[inventory_hostname]['DB_PASSWORD'] }}';\""
+      command: cd /tmp && su postgres -c "psql -c \"ALTER USER {{ hostvars[inventory_hostname]['DB_USER'] }} WITH PASSWORD '{{ hostvars[inventory_hostname]['DB_PASSWORD'] }}';\""
     - name: CREATE REPLICATION USER
-      command: su postgres -c "psql -c \"CREATE ROLE {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} WITH REPLICATION LOGIN PASSWORD '{{ hostvars[inventory_hostname]['DB_REPL_PASSWORD'] }}';\""
+      command: cd /tmp && su postgres -c "psql -c \"CREATE ROLE {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} WITH REPLICATION LOGIN PASSWORD '{{ hostvars[inventory_hostname]['DB_REPL_PASSWORD'] }}';\""
     - name: CREATE DATABASE
-      command: su postgres -c "psql -c \"CREATE DATABASE {{ hostvars[inventory_hostname]['DB_DATABASE'] }};\""
+      command: cd /tmp && su postgres -c "psql -c \"CREATE DATABASE {{ hostvars[inventory_hostname]['DB_DATABASE'] }};\""
     - name: CREATE SECOND TABLE
-      command: su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS second(ID SERIAL PRIMARY KEY NOT NULL, phone varchar(50) NOT NULL);\""
+      command: cd /tmp && su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS second(ID SERIAL PRIMARY KEY NOT NULL, phone varchar(50) NOT NULL);\""
     - name: CREATE FIRST TABLE
-      command: su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS first(ID SERIAL PRIMARY KEY NOT NULL, email varchar(50) NOT NULL);\""
+      command: cd /tmp && su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS first(ID SERIAL PRIMARY KEY NOT NULL, email varchar(50) NOT NULL);\""
 
 - name: REPLICATION_DB
   hosts: host02
