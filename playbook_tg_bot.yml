@@ -1,0 +1,111 @@
+- name: UPDATE
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: fetch available updates
+      command: apt update
+
+
+- name: MASTER_DB_PACKAGES
+  hosts: host01
+  gather_facts: false
+  tasks:
+    - name: APT INSTALL POSTGRES
+      package:
+        name: postgresql
+        state: present
+    - name: APT INSTALL POSTGRESQL-CONTRIB
+      package:
+        name: postgresql-contrib
+        state: present
+
+- name: REPLICATION_DB_PACKAGES
+  hosts: host02
+  gather_facts: false
+  tasks:
+    - name: APT INSTALL POSTGRES
+      package:
+        name: postgresql
+        state: present
+    - name: APT INSTALL POSTGRESQL-CONTRIB
+      package:
+        name: postgresql-contrib
+        state: present
+
+- name: TG_PACKAGES
+  hosts: host03
+  gather_facts: false
+  tasks:
+    - name: APT INSTALL GIT
+      package:
+        name: git
+        state: present
+
+- name: MASTER_DB_CONF
+  hosts: host01
+  gather_facts: false
+  tasks:
+    - name: MAIN CONF
+      blockinfile:
+        path: "/etc/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/main/postgresql.conf"
+        block: |
+          listen_addresses='*'
+          archive_mode=on
+          archive_command = 'cp %p /oracle/pg_data/archive/%f'
+          max_wal_senders = 10
+          wal_level = replica
+          wal_log_hints = on
+          log_replication_commands = on
+    - name: HBA CONF
+      blockinfile:
+        path: "/etc/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/main/pg_hba.conf"
+        block: |
+          host replication {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} {{ hostvars[inventory_hostname]['ansible_host'] }}/32 scram-sha-256
+          host all all {{ hostvars[inventory_hostname]['ansible_host'] }}/32 scram-sha-256
+    - name: RESTART PG
+      service:
+        name: postgresql
+        state: restarted
+    - name: CHANGE POSTGRES PASSWORD
+      command: su postgres -c "psql -c \"ALTER USER {{ hostvars[inventory_hostname]['DB_USER'] }} WITH PASSWORD '{{ hostvars[inventory_hostname]['DB_PASSWORD'] }}';\""
+    - name: CREATE REPLICATION USER
+      command: su postgres -c "psql -c \"CREATE ROLE {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} WITH REPLICATION LOGIN PASSWORD '{{ hostvars[inventory_hostname]['DB_REPL_PASSWORD'] }}';\""
+    - name: CREATE DATABASE
+      command: su postgres -c "psql -c \"CREATE DATABASE {{ hostvars[inventory_hostname]['DB_DATABASE'] }};\""
+    - name: CREATE SECOND TABLE
+      command: su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS second(ID SERIAL PRIMARY KEY NOT NULL, phone varchar(50) NOT NULL);\""
+    - name: CREATE FIRST TABLE
+      command: su postgres -c "psql -d {{ hostvars[inventory_hostname]['DB_DATABASE'] }} -c \"CREATE TABLE IF NOT EXISTS first(ID SERIAL PRIMARY KEY NOT NULL, email varchar(50) NOT NULL);\""
+
+- name: REPLICATION_DB
+  hosts: host02
+  gather_facts: false
+  tasks:
+    - name: REMOVE
+      command: rm -rf /var/lib/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/
+    - name: DO REPLICATION
+      command: pg_basebackup -h {{ hostvars[inventory_hostname]['DB_HOST'] }} -D /var/lib/postgresql/{{ hostvars[inventory_hostname]['PG_VERSION'] }}/main/ -U {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} -vP -w
+      environment:
+        PGPASSWORD: "{{ hostvars[inventory_hostname]['DB_REPL_PASSWORD'] }}"
+
+- name: TG_BOT
+  hosts: host03
+  gather_facts: false
+  tasks:
+    - name: DOWNLOAD FROM REMOTE REPO
+      command: git clone {{ hostvars[inventory_hostname]['remote_repo'] }}
+    - name: INSTALL REQUIREMENTS
+      command: pip install -r bot1nok/requirements.txt --break-system-packages
+    - name: START BOT
+      command: python3 bot1nok/bot.py
+      environment:
+        TOKEN: "{{ hostvars[inventory_hostname]['TOKEN'] }}"
+        RM_HOST: "{{ hostvars[inventory_hostname]['RM_HOST'] }}"
+        RM_PORT: "{{ hostvars[inventory_hostname]['RM_PORT'] }}"
+        RM_USER: "{{ hostvars[inventory_hostname]['RM_USER'] }}"
+        RM_PASSWORD: "{{ hostvars[inventory_hostname]['RM_PASSWORD'] }}"
+        DB_HOST: "{{ hostvars[inventory_hostname]['DB_HOST'] }}"
+        DB_PORT: "{{ hostvars[inventory_hostname]['DB_PORT'] }}"
+        DB_USER: "{{ hostvars[inventory_hostname]['DB_USER'] }}"
+        DB_PASSWORD: "{{ hostvars[inventory_hostname]['DB_PASSWORD'] }}"
+        DB_DATABASE: "{{ hostvars[inventory_hostname]['DB_DATABASE'] }}"
