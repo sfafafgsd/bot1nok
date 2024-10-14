@@ -66,6 +66,7 @@
         block: |
           host replication {{ hostvars[inventory_hostname]['DB_REPL_USER'] }} {{ hostvars[inventory_hostname]['DB_REPL_HOST'] }}/32 scram-sha-256
           host all all {{ hostvars[inventory_hostname]['ansible_host'] }}/32 scram-sha-256
+          host all {{ hostvars[inventory_hostname]['DB_USER'] }} 0.0.0.0/0 scram-sha-256
     - name: RESTART PG
       service:
         name: postgresql
@@ -102,10 +103,12 @@
   tasks:
     - name: DOWNLOAD FROM REMOTE REPO
       command: git clone {{ hostvars[inventory_hostname]['remote_repo'] }}
+    - name: CHANGE BRANCH
+      command: git -C ./bot1nok checkout master
     - name: INSTALL REQUIREMENTS
-      command: pip install -r bot1nok/bot/requirements.txt --break-system-packages
+      command: pip install -r bot1nok/requirements.txt --break-system-packages
     - name: START BOT
-      command: python3 bot1nok/bot/bot.py
+      command: python3 bot1nok/bot.py
       environment:
         TOKEN: "{{ hostvars[inventory_hostname]['TOKEN'] }}"
         RM_HOST: "{{ hostvars[inventory_hostname]['RM_HOST'] }}"
