@@ -103,9 +103,9 @@
     - name: DOWNLOAD FROM REMOTE REPO
       command: git clone {{ hostvars[inventory_hostname]['remote_repo'] }}
     - name: INSTALL REQUIREMENTS
-      command: pip install -r bot1nok/requirements.txt --break-system-packages
+      command: pip install -r bot1nok/bot/requirements.txt --break-system-packages
     - name: START BOT
-      command: python3 bot1nok/bot.py
+      command: python3 bot1nok/bot/bot.py
       environment:
         TOKEN: "{{ hostvars[inventory_hostname]['TOKEN'] }}"
         RM_HOST: "{{ hostvars[inventory_hostname]['RM_HOST'] }}"
