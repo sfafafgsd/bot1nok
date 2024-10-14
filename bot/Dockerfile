@@ -4,11 +4,9 @@ WORKDIR /monbot
 RUN apk update && apk upgrade
 RUN apk add postgresql-dev gcc python3-dev musl-dev
 
-RUN pip install python-telegram-bot==13.7
-RUN pip install paramiko
-RUN pip install python-dotenv
-RUN pip install psycopg2-binary
-
+COPY requirements.txt .
 COPY bot.py .
+
+RUN pip install -r requirements.txt
 
 CMD ["python", "bot.py"]
