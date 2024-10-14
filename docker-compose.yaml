@@ -9,6 +9,7 @@ services:
       - DB_USER=$DB_USER
       - DB_REPL_USER=$DB_REPL_USER
       - DB_REPL_PASSWORD=$DB_REPL_PASSWORD
+      - DB_REPL_HOST=$DB_REPL_HOST
     networks:
       custom_network:
         ipv4_address: 172.20.0.23
